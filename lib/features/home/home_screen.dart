@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../offer_ride/screens/offer_ride_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ThemeMode themeMode;
@@ -127,6 +128,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     title: "Offer Ride",
                     subtitle: "Share your trip",
                     color: green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OfferRideScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -377,67 +386,58 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
   Widget buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
+  required IconData icon,
+  required String title,
+  required String subtitle,
+  required Color color,
+  VoidCallback? onTap,
   }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () {},
-
-      child: Container(
-        padding: const EdgeInsets.all(18),
-
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-        ),
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-
-          children: [
-
-            Container(
-              padding: const EdgeInsets.all(10),
-
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.20),
-                borderRadius: BorderRadius.circular(12),
-              ),
-
-              child: Icon(
-                icon,
-                color: Colors.white,
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-              subtitle,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  return InkWell(
+  borderRadius: BorderRadius.circular(20),
+  onTap: onTap,
+  child: Container(
+  padding: const EdgeInsets.all(18),
+  decoration: BoxDecoration(
+  color: color,
+  borderRadius: BorderRadius.circular(20),
+  ),
+  child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+  Container(
+  padding: const EdgeInsets.all(10),
+  decoration: BoxDecoration(
+  color: Colors.white.withOpacity(0.20),
+  borderRadius: BorderRadius.circular(12),
+  ),
+  child: Icon(
+  icon,
+  color: Colors.white,
+  ),
+  ),
+  const SizedBox(height: 18),
+  Text(
+  title,
+  style: const TextStyle(
+  color: Colors.white,
+  fontSize: 17,
+  fontWeight: FontWeight.w700,
+  ),
+  ),
+  const SizedBox(height: 4),
+  Text(
+  subtitle,
+  style: const TextStyle(
+  color: Colors.white70,
+  fontSize: 13,
+  ),
+  ),
+  ],
+  ),
+  ),
+  );
   }
 
   Widget buildSectionHeader(String title,
@@ -647,6 +647,14 @@ class _HomeScreenState extends State<HomeScreen> {
             buildDrawerItem(
               Icons.add_road_rounded,
               "Offer Ride",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OfferRideScreen(),
+                  ),
+                );
+              },
             ),
 
             buildDrawerItem(
@@ -680,24 +688,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget buildDrawerItem(IconData icon,
-      String title,) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: primary,
-      ),
+Widget buildDrawerItem(
+IconData icon,
+String title, {
+VoidCallback? onTap,
+}) {
+return ListTile(
+leading: Icon(
+icon,
+color: primary,
+),
+title: Text(
+title,
+style: const TextStyle(
+fontWeight: FontWeight.w600,
+),
+),
+onTap: () {
+Navigator.pop(context);
 
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-
-      onTap: () {
-        Navigator.pop(context);
-      },
-    );
-  }
+if (onTap != null) {
+onTap();
 }
+},
+);
+}}
