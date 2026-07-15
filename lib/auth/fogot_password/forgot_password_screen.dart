@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  final ThemeMode themeMode;
+  final VoidCallback toggleTheme;
+
+  const ForgotPasswordScreen({
+    super.key,
+    required this.themeMode,
+    required this.toggleTheme,
+  });
 
   @override
   State<ForgotPasswordScreen> createState() =>
@@ -58,7 +65,10 @@ class _ForgotPasswordScreenState
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const LoginScreen(),
+                  builder: (_) => LoginScreen(
+                    themeMode: widget.themeMode,
+                    toggleTheme: widget.toggleTheme,
+                  ),
                 ),
               );
             },
@@ -230,7 +240,10 @@ class _ForgotPasswordScreenState
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
-                          const LoginScreen(),
+                          LoginScreen(
+                            themeMode: widget.themeMode,
+                            toggleTheme: widget.toggleTheme,
+                          ),
                         ),
                       );
                     },

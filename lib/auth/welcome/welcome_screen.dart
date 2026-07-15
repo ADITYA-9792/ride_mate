@@ -79,7 +79,10 @@ class WelcomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LoginScreen(),
+                          builder: (_) => LoginScreen(
+                            themeMode: themeMode,
+                            toggleTheme: toggleTheme,
+                          ),
                         ),
                       );
                     },
@@ -110,7 +113,10 @@ class WelcomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const SignupScreen(),
+                          builder: (_) => SignupScreen(
+                            themeMode: themeMode,
+                            toggleTheme: toggleTheme,
+                          ),
                         ),
                       );
                     },

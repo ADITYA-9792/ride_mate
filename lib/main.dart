@@ -1,76 +1,80 @@
-import 'package:flutter/gestures.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'features/splash/splash_screen.dart';
+import 'app.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const RideMateApp());
-}
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-class RideMateApp extends StatefulWidget {
-  const RideMateApp({super.key});
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  @override
-  State<RideMateApp> createState() => _RideMateAppState();
-}
+    runApp(const RideMateApp());
+  } catch (error, stackTrace) {
+    debugPrint('Firebase initialization failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
 
-class _RideMateAppState extends State<RideMateApp> {
-  ThemeMode _themeMode = ThemeMode.light;
-
-  void toggleTheme() {
-    setState(() {
-      _themeMode =
-      _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-    });
+    runApp(
+      FirebaseErrorApp(
+        error: error.toString(),
+      ),
+    );
   }
+}
+
+class FirebaseErrorApp extends StatelessWidget {
+  final String error;
+
+  const FirebaseErrorApp({
+    super.key,
+    required this.error,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "RideMate",
-
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.trackpad,
-        },
-      ),
-
-      themeMode: _themeMode,
-
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF7F8FC),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5B4CF0),
-          brightness: Brightness.light,
+      home: Scaffold(
+        backgroundColor: const Color(0xFF111318),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 70,
+                    color: Colors.redAccent,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Firebase initialization failed',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    error,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        cardTheme: const CardThemeData(
-          color: Colors.white,
-          elevation: 0,
-        ),
-      ),
-
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF111318),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7C6FFF),
-          brightness: Brightness.dark,
-        ),
-        cardTheme: const CardThemeData(
-          color: Color(0xFF1C1F26),
-          elevation: 0,
-        ),
-      ),
-      home: SplashScreen(
-        themeMode: _themeMode,
-        toggleTheme: toggleTheme,
-
       ),
     );
   }

@@ -1,402 +1,437 @@
 import 'package:flutter/material.dart';
+
 import '../fogot_password/forgot_password_screen.dart';
 import '../signup/signup_screen.dart';
+import '../../features/home/home_screen.dart';
+import '../../services/google_auth_service.dart';
+
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final ThemeMode themeMode;
+  final VoidCallback toggleTheme;
+
+  const LoginScreen({
+    super.key,
+    required this.themeMode,
+    required this.toggleTheme,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-final TextEditingController emailController = TextEditingController();
-final TextEditingController passwordController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
 
-bool obscurePassword = true;
-bool rememberMe = false;
-bool isLoading = false;
+  bool obscurePassword = true;
+  bool rememberMe = false;
+  bool isLoading = false;
 
-@override
-void dispose() {
-emailController.dispose();
-passwordController.dispose();
-super.dispose();
-}
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
-void login() {
-if (!_formKey.currentState!.validate()) return;
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-setState(() {
-isLoading = true;
-});
+    setState(() => isLoading = true);
 
-Future.delayed(const Duration(seconds: 2), () {
-if (!mounted) return;
+    await Future.delayed(const Duration(seconds: 2));
 
-setState(() {
-isLoading = false;
-});
+    if (!mounted) return;
 
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text("Login successful (Demo)"),
-),
-);
-});
-}
+    setState(() => isLoading = false);
 
-@override
-Widget build(BuildContext context) {
-return Scaffold(
-body: Container(
-width: double.infinity,
-decoration: const BoxDecoration(
-gradient: LinearGradient(
-colors: [
-Color(0xff0F2027),
-Color(0xff203A43),
-Color(0xff2C5364),
-],
-begin: Alignment.topLeft,
-end: Alignment.bottomRight,
-),
-),
-child: SafeArea(
-child: SingleChildScrollView(
-padding: const EdgeInsets.symmetric(
-horizontal: 24,
-vertical: 30,
-),
-child: Form(
-key: _formKey,
-child: Column(
-children: [
-const SizedBox(height: 40),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Login Successful (Demo)"),
+      ),
+    );
 
-Container(
-height: 90,
-width: 90,
-decoration: BoxDecoration(
-color: Colors.white,
-borderRadius: BorderRadius.circular(22),
-),
-child: const Icon(
-Icons.directions_car,
-size: 50,
-color: Color(0xff203A43),
-),
-),
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HomeScreen(
+          themeMode: widget.themeMode,
+          toggleTheme: widget.toggleTheme,
+        ),
+      ),
+    );
+  }
 
-const SizedBox(height: 30),
+  Future<void> googleLogin() async {
+    final user = await GoogleAuthService.signInWithGoogle();
 
-const Text(
-"Welcome Back 👋",
-style: TextStyle(
-color: Colors.white,
-fontSize: 30,
-fontWeight: FontWeight.bold,
-),
-),
+    if (!mounted) return;
 
-const SizedBox(height: 8),
+    if (user != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Welcome ${user.displayName ?? user.email}"),
+        ),
+      );
 
-const Text(
-"Login to continue your RideMate journey",
-style: TextStyle(
-color: Colors.white70,
-fontSize: 15,
-),
-),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(
+            themeMode: widget.themeMode,
+            toggleTheme: widget.toggleTheme,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Google Sign-In Cancelled"),
+        ),
+      );
+    }
+  }
 
-const SizedBox(height: 40),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xff0F2027),
+              Color(0xff203A43),
+              Color(0xff2C5364),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 30,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
 
-TextFormField(
-controller: emailController,
-keyboardType: TextInputType.emailAddress,
-style: const TextStyle(color: Colors.white),
-decoration: InputDecoration(
-hintText: "Email Address",
-hintStyle: const TextStyle(color: Colors.white54),
-prefixIcon: const Icon(
-Icons.email_outlined,
-color: Colors.white,
-),
-filled: true,
-fillColor: Colors.white12,
-border: OutlineInputBorder(
-borderRadius: BorderRadius.circular(14),
-borderSide: BorderSide.none,
-),
-),
-validator: (value) {
-if (value == null || value.isEmpty) {
-return "Enter your email";
-}
+                  Container(
+                    height: 90,
+                    width: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: const Icon(
+                      Icons.directions_car,
+                      size: 50,
+                      color: Color(0xff203A43),
+                    ),
+                  ),
 
-if (!value.contains("@")) {
-return "Enter a valid email";
-}
+                  const SizedBox(height: 30),
 
-return null;
-},
-),
+                  const Text(
+                    "Welcome Back 👋",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
 
-const SizedBox(height: 20),
+                  const SizedBox(height: 8),
 
-TextFormField(
-controller: passwordController,
-obscureText: obscurePassword,
-style: const TextStyle(color: Colors.white),
-decoration: InputDecoration(
-hintText: "Password",
-hintStyle: const TextStyle(color: Colors.white54),
-prefixIcon: const Icon(
-Icons.lock_outline,
-color: Colors.white,
-),
-suffixIcon: IconButton(
-onPressed: () {
-setState(() {
-obscurePassword = !obscurePassword;
-});
-},
-icon: Icon(
-obscurePassword
-? Icons.visibility_off
-: Icons.visibility,
-color: Colors.white,
-),
-),
-filled: true,
-fillColor: Colors.white12,
-border: OutlineInputBorder(
-borderRadius: BorderRadius.circular(14),
-borderSide: BorderSide.none,
-),
-),
-validator: (value) {
-if (value == null || value.isEmpty) {
-return "Enter your password";
-}
+                  const Text(
+                    "Login to continue your RideMate journey",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                    ),
+                  ),
 
-if (value.length < 6) {
-return "Password must contain at least 6 characters";
-}
+                  const SizedBox(height: 40),
 
-return null;
-},
-),
+                  TextFormField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Email Address",
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Colors.white,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white12,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Enter your email";
+                      }
 
-const SizedBox(height: 12),
+                      if (!value.contains("@")) {
+                        return "Enter a valid email";
+                      }
 
-Row(
-children: [
-Checkbox(
-value: rememberMe,
-activeColor: Colors.white,
-checkColor: Colors.black,
-onChanged: (value) {
-setState(() {
-rememberMe = value ?? false;
-});
-},
-),
-const Text(
-"Remember Me",
-style: TextStyle(color: Colors.white),
-),
-],
-),
+                      return null;
+                    },
+                  ),
 
-const SizedBox(height: 18),
+                  const SizedBox(height: 20),
 
-SizedBox(
-width: double.infinity,
-height: 55,
-child: ElevatedButton(
-onPressed: isLoading ? null : login,
-style: ElevatedButton.styleFrom(
-backgroundColor: Colors.white,
-foregroundColor: const Color(0xff203A43),
-shape: RoundedRectangleBorder(
-borderRadius: BorderRadius.circular(14),
-),
-),
-child: isLoading
-? const SizedBox(
-width: 22,
-height: 22,
-child: CircularProgressIndicator(
-strokeWidth: 2.5,
-),
-)
-: const Text(
-"LOGIN",
-style: TextStyle(
-fontSize: 17,
-fontWeight: FontWeight.bold,
-),
-),
-),
-),
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: obscurePassword,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Password",
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.white,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: Colors.white12,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Enter your password";
+                      }
 
-// ========= PART 2 WILL START FROM HERE =========
-const SizedBox(height: 25),
+                      if (value.length < 6) {
+                        return "Password must be at least 6 characters";
+                      }
 
-Row(
-children: const [
-Expanded(
-child: Divider(color: Colors.white38),
-),
-Padding(
-padding: EdgeInsets.symmetric(horizontal: 12),
-child: Text(
-"OR",
-style: TextStyle(
-color: Colors.white70,
-fontWeight: FontWeight.w600,
-),
-),
-),
-Expanded(
-child: Divider(color: Colors.white38),
-),
-],
-),
+                      return null;
+                    },
+                  ),
 
-const SizedBox(height: 25),
+                  const SizedBox(height: 10),
 
-SizedBox(
-width: double.infinity,
-height: 55,
-child: OutlinedButton.icon(
-onPressed: () {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text(
-"Google Sign-In will be added later.",
-),
-),
-);
-},
-icon: const Icon(
-Icons.g_mobiledata,
-size: 30,
-color: Colors.white,
-),
-label: const Text(
-"Continue with Google",
-style: TextStyle(
-color: Colors.white,
-fontWeight: FontWeight.w600,
-fontSize: 16,
-),
-),
-style: OutlinedButton.styleFrom(
-side: const BorderSide(color: Colors.white54),
-shape: RoundedRectangleBorder(
-borderRadius: BorderRadius.circular(14),
-),
-),
-),
-),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: rememberMe,
+                        activeColor: Colors.white,
+                        checkColor: Colors.black,
+                        onChanged: (value) {
+                          setState(() {
+                            rememberMe = value ?? false;
+                          });
+                        },
+                      ),
+                      const Text(
+                        "Remember Me",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
 
-const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
-SizedBox(
-width: double.infinity,
-height: 55,
-child: OutlinedButton.icon(
-onPressed: () {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text(
-"Phone Login will be added later.",
-),
-),
-);
-},
-icon: const Icon(
-Icons.phone_android,
-color: Colors.white,
-),
-label: const Text(
-"Continue with Phone",
-style: TextStyle(
-color: Colors.white,
-fontWeight: FontWeight.w600,
-fontSize: 16,
-),
-),
-style: OutlinedButton.styleFrom(
-side: const BorderSide(color: Colors.white54),
-shape: RoundedRectangleBorder(
-borderRadius: BorderRadius.circular(14),
-),
-),
-),
-),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xff203A43),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text(
+                        "LOGIN",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
 
-const SizedBox(height: 20),
+                  const SizedBox(height: 25),
 
-TextButton(
-onPressed: () {
-Navigator.push(
-   context,
-   MaterialPageRoute(
-     builder: (_) => const ForgotPasswordScreen(),
-   ),
- );
-},
-child: const Text(
-"Forgot Password?",
-style: TextStyle(
-color: Colors.white,
-fontWeight: FontWeight.bold,
-),
-),
-),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white38)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          "OR",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.white38)),
+                    ],
+                  ),
 
-const SizedBox(height: 15),
+                  const SizedBox(height: 25),
 
-Row(
-mainAxisAlignment: MainAxisAlignment.center,
-children: [
-const Text(
-"Don't have an account?",
-style: TextStyle(
-color: Colors.white70,
-),
-),
-TextButton(
-onPressed: () {
-Navigator.push(
-   context,
-    MaterialPageRoute(
-    builder: (_) => const SignupScreen(),
-   ),
- );
-},
-child: const Text(
-"Sign Up",
-style: TextStyle(
-fontWeight: FontWeight.bold,
-color: Colors.white,
-),
-),
-),
-],
-),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: OutlinedButton.icon(
+                      onPressed: googleLogin,
+                      icon: const Icon(
+                        Icons.g_mobiledata,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      label: const Text(
+                        "Continue with Google",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
 
-const SizedBox(height: 30),
-],
-),
-),
-),
-),
-),
-);
-}
+                  const SizedBox(height: 15),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Phone Login Coming Soon",
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.phone_android,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        "Continue with Phone",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                          ForgotPasswordScreen(
+                            themeMode: widget.themeMode,
+                            toggleTheme: widget.toggleTheme,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account?",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                              SignupScreen(
+                                themeMode: widget.themeMode,
+                                toggleTheme: widget.toggleTheme,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  const Text(
+                    "Google Sign-In is powered by Firebase",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

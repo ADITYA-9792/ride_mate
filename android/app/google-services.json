@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1041820360029",
+    "project_id": "ridemate-43114",
+    "storage_bucket": "ridemate-43114.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041820360029:android:954421de42890223311cb4",
+        "android_client_info": {
+          "package_name": "com.example.ride_mate"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1041820360029-lfe1bf4kp39jr9cocabns7140gkh1uan.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ride_mate",
+            "certificate_hash": "f2b6cae905909d4221d658902a5b5279558832bd"
+          }
+        },
+        {
+          "client_id": "1041820360029-u4b2n7kjfrst8s66vjk539onrv20pmj7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMApuxgAFeKFRMV8a5hLKkkDJgGnfNLeY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041820360029-u4b2n7kjfrst8s66vjk539onrv20pmj7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1041820360029-033qgri1uv1g16rdj03svkd19ubtoslb.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rideMate"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
