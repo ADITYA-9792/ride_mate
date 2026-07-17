@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../offer_ride/screens/offer_ride_screen.dart';
-
+import '../find_ride/find_ride_screen.dart';
 class HomeScreen extends StatefulWidget {
   final ThemeMode themeMode;
   final VoidCallback toggleTheme;
@@ -119,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: primary,
                   ),
                 ),
+
 
                 const SizedBox(width: 15),
 
@@ -642,7 +643,14 @@ class _HomeScreenState extends State<HomeScreen> {
             buildDrawerItem(
               Icons.search_rounded,
               "Find Ride",
-            ),
+              onTap: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FindRideScreen(),
+                  ),
+                );
+              }),
 
             buildDrawerItem(
               Icons.add_road_rounded,
