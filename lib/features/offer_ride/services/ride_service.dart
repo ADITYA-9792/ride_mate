@@ -12,89 +12,95 @@ class RideService {
   }
 
   Future<void> publishRide(RideModel ride) async {
-    final User? user = _auth.currentUser;
+    final User? currentUser = _auth.currentUser;
 
-    if (user == null) {
-      throw Exception('User is not logged in.');
+    if (currentUser == null) {
+      throw Exception('Please login before publishing a ride.');
     }
 
-    await _ridesCollection.add(
-      ride.toMap(),
-    );
+    final Map<String, dynamic> rideData = ride.toMap();
+
+    rideData['driverId'] = currentUser.uid;
+    rideData['status'] = 'active';
+    rideData['createdAt'] = FieldValue.serverTimestamp();
+    rideData['updatedAt'] = FieldValue.serverTimestamp();
+
+    await _ridesCollection.add(rideData);
   }
 
   Stream<List<RideModel>> getMyRides() {
-    final User? user = _auth.currentUser;
+    final User? currentUser = _auth.currentUser;
 
-    if (user == null) {
-      return Stream.value([]);
+    if (currentUser == null) {
+      return Stream<List<RideModel>>.value([]);
     }
 
     return _ridesCollection
         .where(
-      'userId',
-      isEqualTo: user.uid,
-    )
-        .orderBy(
-      'createdAt',
-      descending: true,
+      'driverId',
+      isEqualTo: currentUser.uid,
     )
         .snapshots()
-        .map(
-          (snapshot) {
-        return snapshot.docs
-            .map(
-              (document) => RideModel.fromDocument(document),
-        )
-            .toList();
-      },
-    );
+        .map((snapshot) {
+      final List<RideModel> rides = snapshot.docs.map((document) {
+        return RideModel.fromMap(
+          document.data(),
+          document.id,
+        );
+      }).toList();
+
+      rides.sort((firstRide, secondRide) {
+        final DateTime firstDate =
+            firstRide.createdAt ?? DateTime(2000);
+        final DateTime secondDate =
+            secondRide.createdAt ?? DateTime(2000);
+
+        return secondDate.compareTo(firstDate);
+      });
+
+      return rides;
+    });
   }
 
-  Future<void> updateRide(
-      String rideId,
-      Map<String, dynamic> updatedData,
-      ) async {
-    if (rideId.isEmpty) {
-      throw Exception('Ride ID is missing.');
+  Future<void> updateRide({
+    required String rideId,
+    required RideModel ride,
+  }) async {
+    if (rideId.trim().isEmpty) {
+      throw Exception("Ride ID is missing.");
     }
 
     await _ridesCollection.doc(rideId).update({
-      ...updatedData,
+      'pickup': ride.pickup,
+      'destination': ride.destination,
+      'date': ride.date,
+      'time': ride.time,
+      'vehicle': ride.vehicle,
+      'seats': ride.seats,
+      'price': ride.price,
+      'description': ride.description,
+      'status': ride.status,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> cancelRide(String rideId) async {
-    if (rideId.isEmpty) {
+    if (rideId.trim().isEmpty) {
       throw Exception('Ride ID is missing.');
     }
 
     await _ridesCollection.doc(rideId).update({
       'status': 'cancelled',
+      'cancelledAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> deleteRide(String rideId) async {
-    if (rideId.isEmpty) {
+    if (rideId.trim().isEmpty) {
       throw Exception('Ride ID is missing.');
     }
 
     await _ridesCollection.doc(rideId).delete();
-  }
-
-  Future<RideModel?> getRideById(String rideId) async {
-    if (rideId.isEmpty) {
-      return null;
-    }
-
-    final document = await _ridesCollection.doc(rideId).get();
-
-    if (!document.exists || document.data() == null) {
-      return null;
-    }
-
-    return RideModel.fromDocument(document);
   }
 }

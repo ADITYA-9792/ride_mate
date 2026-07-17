@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/ride_model.dart';
@@ -32,6 +33,14 @@ class _EditRideScreenState extends State<EditRideScreen> {
 
   bool isUpdating = false;
 
+  final List<String> vehicleOptions = const [
+    'Car',
+    'SUV',
+    'Sedan',
+    'Hatchback',
+    'Bike',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -60,8 +69,11 @@ class _EditRideScreenState extends State<EditRideScreen> {
       text: widget.ride.description,
     );
 
-    vehicle = widget.ride.vehicle;
-    seats = widget.ride.seats;
+    vehicle = vehicleOptions.contains(widget.ride.vehicle)
+        ? widget.ride.vehicle
+        : vehicleOptions.first;
+
+    seats = widget.ride.seats > 0 ? widget.ride.seats : 1;
   }
 
   @override
@@ -72,6 +84,7 @@ class _EditRideScreenState extends State<EditRideScreen> {
     timeController.dispose();
     priceController.dispose();
     descriptionController.dispose();
+
     super.dispose();
   }
 
@@ -79,215 +92,264 @@ class _EditRideScreenState extends State<EditRideScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Ride"),
+        title: const Text(
+          'Edit Ride',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            buildTextField(
-              controller: pickupController,
-              label: "Pickup Location",
-              icon: Icons.my_location,
-            ),
-
-            const SizedBox(height: 18),
-
-            buildTextField(
-              controller: destinationController,
-              label: "Destination",
-              icon: Icons.location_on,
-            ),
-
-            const SizedBox(height: 18),
-
-            TextField(
-              controller: dateController,
-              readOnly: true,
-              onTap: selectDate,
-              decoration: buildInputDecoration(
-                label: "Travel Date",
-                icon: Icons.calendar_today,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior:
+          ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            35,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Update Ride Details',
+                style: TextStyle(
+                  fontSize: 27,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-
-            const SizedBox(height: 18),
-
-            TextField(
-              controller: timeController,
-              readOnly: true,
-              onTap: selectTime,
-              decoration: buildInputDecoration(
-                label: "Departure Time",
-                icon: Icons.access_time,
+              const SizedBox(height: 8),
+              Text(
+                'Make changes to your published ride.',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                ),
               ),
-            ),
+              const SizedBox(height: 28),
 
-            const SizedBox(height: 18),
-
-            DropdownButtonFormField<String>(
-              initialValue: vehicle,
-              decoration: buildInputDecoration(
-                label: "Vehicle",
-                icon: Icons.directions_car,
+              buildTextField(
+                controller: pickupController,
+                label: 'Pickup Location',
+                icon: Icons.my_location_rounded,
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: "Car",
-                  child: Text("Car"),
-                ),
-                DropdownMenuItem(
-                  value: "SUV",
-                  child: Text("SUV"),
-                ),
-                DropdownMenuItem(
-                  value: "Sedan",
-                  child: Text("Sedan"),
-                ),
-                DropdownMenuItem(
-                  value: "Hatchback",
-                  child: Text("Hatchback"),
-                ),
-                DropdownMenuItem(
-                  value: "Bike",
-                  child: Text("Bike"),
-                ),
-              ],
-              onChanged: isUpdating
-                  ? null
-                  : (value) {
-                if (value == null) return;
 
-                setState(() {
-                  vehicle = value;
-                });
-              },
-            ),
+              const SizedBox(height: 18),
 
-            const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.grey.shade400,
-                ),
-                borderRadius: BorderRadius.circular(15),
+              buildTextField(
+                controller: destinationController,
+                label: 'Destination',
+                icon: Icons.location_on_rounded,
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.event_seat),
-                  const SizedBox(width: 15),
-                  const Text(
-                    "Available Seats",
-                    style: TextStyle(fontSize: 16),
+
+              const SizedBox(height: 18),
+
+              TextField(
+                controller: dateController,
+                readOnly: true,
+                enabled: !isUpdating,
+                onTap: selectDate,
+                decoration: buildInputDecoration(
+                  label: 'Travel Date',
+                  icon: Icons.calendar_today_rounded,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              TextField(
+                controller: timeController,
+                readOnly: true,
+                enabled: !isUpdating,
+                onTap: selectTime,
+                decoration: buildInputDecoration(
+                  label: 'Departure Time',
+                  icon: Icons.access_time_rounded,
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              DropdownButtonFormField<String>(
+                initialValue: vehicle,
+                isExpanded: true,
+                decoration: buildInputDecoration(
+                  label: 'Vehicle',
+                  icon: Icons.directions_car_rounded,
+                ),
+                items: vehicleOptions.map((vehicleName) {
+                  return DropdownMenuItem<String>(
+                    value: vehicleName,
+                    child: Text(vehicleName),
+                  );
+                }).toList(),
+                onChanged: isUpdating
+                    ? null
+                    : (String? value) {
+                  if (value == null) {
+                    return;
+                  }
+
+                  setState(() {
+                    vehicle = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey.shade400,
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: isUpdating
-                        ? null
-                        : () {
-                      if (seats > 1) {
-                        setState(() {
-                          seats--;
-                        });
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.remove_circle_outline,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.event_seat_rounded,
+                    ),
+                    const SizedBox(width: 15),
+                    const Expanded(
+                      child: Text(
+                        'Available Seats',
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: isUpdating
+                          ? null
+                          : () {
+                        if (seats > 1) {
+                          setState(() {
+                            seats--;
+                          });
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.remove_circle_outline_rounded,
+                      ),
+                    ),
+                    Text(
+                      seats.toString(),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: isUpdating
+                          ? null
+                          : () {
+                        if (seats < 8) {
+                          setState(() {
+                            seats++;
+                          });
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.add_circle_outline_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              buildTextField(
+                controller: priceController,
+                label: 'Price Per Seat (₹)',
+                icon: Icons.currency_rupee_rounded,
+                keyboardType: TextInputType.number,
+              ),
+
+              const SizedBox(height: 20),
+
+              buildTextField(
+                controller: descriptionController,
+                label: 'Ride Description',
+                icon: Icons.notes_rounded,
+                maxLines: 4,
+                textInputAction: TextInputAction.done,
+              ),
+
+              const SizedBox(height: 35),
+
+              SizedBox(
+                width: double.infinity,
+                height: 58,
+                child: ElevatedButton.icon(
+                  onPressed: isUpdating ? null : updateRide,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                    primary.withValues(alpha: 0.60),
+                    disabledForegroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  Text(
-                    seats.toString(),
+                  icon: isUpdating
+                      ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                      : const Icon(
+                    Icons.save_rounded,
+                  ),
+                  label: Text(
+                    isUpdating
+                        ? 'Updating...'
+                        : 'Update Ride',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  IconButton(
-                    onPressed: isUpdating
-                        ? null
-                        : () {
-                      if (seats < 8) {
-                        setState(() {
-                          seats++;
-                        });
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.add_circle_outline,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            buildTextField(
-              controller: priceController,
-              label: "Price Per Seat (₹)",
-              icon: Icons.currency_rupee,
-              keyboardType: TextInputType.number,
-            ),
-
-            const SizedBox(height: 20),
-
-            buildTextField(
-              controller: descriptionController,
-              label: "Ride Description",
-              icon: Icons.notes,
-              maxLines: 4,
-              textInputAction: TextInputAction.done,
-            ),
-
-            const SizedBox(height: 35),
-
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: ElevatedButton.icon(
-                onPressed: isUpdating ? null : updateRide,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                icon: isUpdating
-                    ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-                    : const Icon(Icons.save),
-                label: Text(
-                  isUpdating ? "Updating..." : "Update Ride",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Future<void> updateRide() async {
-    final pickup = pickupController.text.trim();
-    final destination = destinationController.text.trim();
-    final date = dateController.text.trim();
-    final time = timeController.text.trim();
-    final priceText = priceController.text.trim();
-    final description = descriptionController.text.trim();
+    FocusScope.of(context).unfocus();
+
+    final String pickup =
+    pickupController.text.trim();
+
+    final String destination =
+    destinationController.text.trim();
+
+    final String date =
+    dateController.text.trim();
+
+    final String time =
+    timeController.text.trim();
+
+    final String priceText =
+    priceController.text.trim();
+
+    final String description =
+    descriptionController.text.trim();
 
     if (pickup.isEmpty ||
         destination.isEmpty ||
@@ -295,14 +357,46 @@ class _EditRideScreenState extends State<EditRideScreen> {
         time.isEmpty ||
         priceText.isEmpty ||
         description.isEmpty) {
-      showMessage("Please fill all required fields.");
+      showMessage(
+        'Please fill all required fields.',
+      );
+
       return;
     }
 
-    final int? price = int.tryParse(priceText);
+    if (pickup.toLowerCase() ==
+        destination.toLowerCase()) {
+      showMessage(
+        'Pickup and destination cannot be the same.',
+      );
+
+      return;
+    }
+
+    final int? price =
+    int.tryParse(priceText);
 
     if (price == null || price <= 0) {
-      showMessage("Please enter a valid price.");
+      showMessage(
+        'Please enter a valid price.',
+      );
+
+      return;
+    }
+
+    if (vehicle.trim().isEmpty) {
+      showMessage(
+        'Please select a vehicle.',
+      );
+
+      return;
+    }
+
+    if (seats <= 0) {
+      showMessage(
+        'Please select valid seats.',
+      );
+
       return;
     }
 
@@ -311,34 +405,57 @@ class _EditRideScreenState extends State<EditRideScreen> {
     });
 
     try {
-      await rideService.updateRide(
-        widget.ride.id,
-        {
-          "pickup": pickup,
-          "destination": destination,
-          "date": date,
-          "time": time,
-          "vehicle": vehicle,
-          "seats": seats,
-          "price": price,
-          "description": description,
-        },
+      final RideModel updatedRide = RideModel(
+        id: widget.ride.id,
+        driverId: widget.ride.driverId,
+        pickup: pickup,
+        destination: destination,
+        date: date,
+        time: time,
+        vehicle: vehicle,
+        seats: seats,
+        price: price,
+        description: description,
+        status: widget.ride.status,
+        createdAt: widget.ride.createdAt,
       );
 
-      if (!mounted) return;
+      await rideService.updateRide(
+        rideId: widget.ride.id,
+        ride: updatedRide,
+      );
+
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Ride updated successfully."),
+          content: Text(
+            'Ride updated successfully.',
+          ),
           backgroundColor: Colors.green,
         ),
       );
 
       Navigator.pop(context);
-    } catch (error) {
-      if (!mounted) return;
+    } on FirebaseException catch (error) {
+      if (!mounted) {
+        return;
+      }
 
-      showMessage("Failed to update ride.");
+      showMessage(
+        error.message ??
+            'Failed to update ride.',
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      showMessage(
+        'Failed to update ride. Please try again.',
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -351,30 +468,73 @@ class _EditRideScreenState extends State<EditRideScreen> {
   Future<void> selectDate() async {
     final DateTime now = DateTime.now();
 
-    final DateTime? picked = await showDatePicker(
+    DateTime initialDate = now;
+
+    final List<String> dateParts =
+    dateController.text.split('/');
+
+    if (dateParts.length == 3) {
+      final int? day =
+      int.tryParse(dateParts[0]);
+
+      final int? month =
+      int.tryParse(dateParts[1]);
+
+      final int? year =
+      int.tryParse(dateParts[2]);
+
+      if (day != null &&
+          month != null &&
+          year != null) {
+        final DateTime existingDate = DateTime(
+          year,
+          month,
+          day,
+        );
+
+        if (!existingDate.isBefore(now)) {
+          initialDate = existingDate;
+        }
+      }
+    }
+
+    final DateTime? picked =
+    await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: DateTime(now.year + 5),
+      initialDate: initialDate,
+      firstDate: DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ),
+      lastDate: DateTime(
+        now.year + 5,
+      ),
     );
 
-    if (!mounted || picked == null) return;
+    if (!mounted || picked == null) {
+      return;
+    }
 
     dateController.text =
-    "${picked.day.toString().padLeft(2, '0')}/"
-        "${picked.month.toString().padLeft(2, '0')}/"
-        "${picked.year}";
+    '${picked.day.toString().padLeft(2, '0')}/'
+        '${picked.month.toString().padLeft(2, '0')}/'
+        '${picked.year}';
   }
 
   Future<void> selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final TimeOfDay? picked =
+    await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
 
-    if (!mounted || picked == null) return;
+    if (!mounted || picked == null) {
+      return;
+    }
 
-    timeController.text = picked.format(context);
+    timeController.text =
+        picked.format(context);
   }
 
   Widget buildTextField({
@@ -382,8 +542,10 @@ class _EditRideScreenState extends State<EditRideScreen> {
     required String label,
     required IconData icon,
     int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    TextInputAction textInputAction = TextInputAction.next,
+    TextInputType keyboardType =
+        TextInputType.text,
+    TextInputAction textInputAction =
+        TextInputAction.next,
   }) {
     return TextField(
       controller: controller,
@@ -406,16 +568,41 @@ class _EditRideScreenState extends State<EditRideScreen> {
       labelText: label,
       prefixIcon: Icon(icon),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius:
+        BorderRadius.circular(15),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(15),
+        borderSide: BorderSide(
+          color: Colors.grey.shade400,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(15),
+        borderSide: const BorderSide(
+          color: primary,
+          width: 2,
+        ),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius:
+        BorderRadius.circular(15),
+        borderSide: BorderSide(
+          color: Colors.grey.shade300,
+        ),
       ),
     );
   }
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
   }
 }
