@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
@@ -28,11 +28,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _licenseController;
   late final TextEditingController _bioController;
 
+  String _photoUrl = '';
+
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
 
   @override
   void initState() {
     super.initState();
+
+    _photoUrl = widget.user.photoUrl;
 
     _nameController = TextEditingController(
       text: widget.user.name,
@@ -62,13 +67,85 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _vehicleController.dispose();
     _licenseController.dispose();
     _bioController.dispose();
+
     super.dispose();
+  }
+
+  Future<void> _uploadProfilePhoto() async {
+    if (_isUploadingPhoto || _isSaving) {
+      return;
+    }
+
+    setState(() {
+      _isUploadingPhoto = true;
+    });
+
+    try {
+      final String? uploadedUrl =
+      await _profileService.uploadProfilePhoto();
+
+      if (uploadedUrl == null) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _photoUrl = uploadedUrl;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Profile photo uploaded successfully.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.message ?? 'Unable to upload profile photo.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Something went wrong while uploading the photo.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingPhoto = false;
+        });
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
+    final bool isValid =
+        _formKey.currentState?.validate() ?? false;
+
+    if (!isValid || _isSaving || _isUploadingPhoto) {
       return;
     }
 
@@ -77,12 +154,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      final updatedUser = widget.user.copyWith(
+      final UserModel updatedUser = widget.user.copyWith(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         vehicle: _vehicleController.text.trim(),
-        licenseNumber: _licenseController.text.trim().toUpperCase(),
+        licenseNumber:
+        _licenseController.text.trim().toUpperCase(),
         bio: _bioController.text.trim(),
+        photoUrl: _photoUrl,
       );
 
       await _profileService.updateProfile(updatedUser);
@@ -93,7 +172,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profile updated successfully.'),
+          content: Text(
+            'Profile updated successfully.',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -135,7 +216,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String? _validateName(String? value) {
-    final name = value?.trim() ?? '';
+    final String name = value?.trim() ?? '';
 
     if (name.isEmpty) {
       return 'Please enter your name.';
@@ -149,18 +230,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String? _validatePhone(String? value) {
-    final phone = value?.trim() ?? '';
+    final String phone = value?.trim() ?? '';
 
     if (phone.isEmpty) {
       return null;
     }
 
-    final cleanedPhone = phone.replaceAll(
-      RegExp(r'[\s\-\(\)]'),
+    final String cleanedPhone = phone.replaceAll(
+      RegExp(r'[\s\-()]'),
       '',
     );
 
-    if (!RegExp(r'^\+?[0-9]{10,13}$').hasMatch(cleanedPhone)) {
+    if (!RegExp(r'^\+?[0-9]{10,13}$')
+        .hasMatch(cleanedPhone)) {
       return 'Enter a valid phone number.';
     }
 
@@ -168,7 +250,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   String? _validateLicense(String? value) {
-    final license = value?.trim() ?? '';
+    final String license = value?.trim() ?? '';
 
     if (license.isEmpty) {
       return null;
@@ -183,75 +265,99 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-        centerTitle: true,
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                _buildProfilePicture(),
-                const SizedBox(height: 28),
-                _buildTextField(
-                  controller: _nameController,
-                  label: 'Full Name',
-                  icon: Icons.person_outline,
-                  validator: _validateName,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                _buildReadOnlyEmailField(),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _phoneController,
-                  label: 'Phone Number',
-                  icon: Icons.phone_outlined,
-                  validator: _validatePhone,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _vehicleController,
-                  label: 'Vehicle',
-                  hintText: 'Example: Honda City',
-                  icon: Icons.directions_car_outlined,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _licenseController,
-                  label: 'License Number',
-                  hintText: 'Example: UP32 20260012345',
-                  icon: Icons.badge_outlined,
-                  validator: _validateLicense,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.characters,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _bioController,
-                  label: 'Bio',
-                  hintText: 'Write something about yourself',
-                  icon: Icons.info_outline,
-                  maxLines: 4,
-                  maxLength: 150,
-                  textInputAction: TextInputAction.done,
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: 28),
-                _buildSaveButton(),
-              ],
+    return PopScope(
+      canPop: !_isSaving && !_isUploadingPhoto,
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade100,
+        appBar: AppBar(
+          title: const Text('Edit Profile'),
+          centerTitle: true,
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+        ),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _buildProfilePicture(),
+                  const SizedBox(height: 28),
+
+                  _buildTextField(
+                    controller: _nameController,
+                    label: 'Full Name',
+                    icon: Icons.person_outline,
+                    validator: _validateName,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization:
+                    TextCapitalization.words,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildReadOnlyEmailField(),
+
+                  const SizedBox(height: 16),
+
+                  _buildTextField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    hintText: 'Enter your phone number',
+                    icon: Icons.phone_outlined,
+                    validator: _validatePhone,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTextField(
+                    controller: _vehicleController,
+                    label: 'Vehicle',
+                    hintText: 'Example: Honda City',
+                    icon: Icons.directions_car_outlined,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization:
+                    TextCapitalization.words,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTextField(
+                    controller: _licenseController,
+                    label: 'License Number',
+                    hintText: 'Example: UP32 20260012345',
+                    icon: Icons.badge_outlined,
+                    validator: _validateLicense,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization:
+                    TextCapitalization.characters,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTextField(
+                    controller: _bioController,
+                    label: 'Bio',
+                    hintText:
+                    'Write something about yourself',
+                    icon: Icons.info_outline,
+                    maxLines: 4,
+                    maxLength: 150,
+                    textInputAction: TextInputAction.done,
+                    textCapitalization:
+                    TextCapitalization.sentences,
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  _buildSaveButton(),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -260,59 +366,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfilePicture() {
-    final hasPhoto = widget.user.photoUrl.trim().isNotEmpty;
+    final bool hasPhoto = _photoUrl.trim().isNotEmpty;
 
-    return Stack(
-      alignment: Alignment.bottomRight,
+    return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: const BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
-          ),
-          child: CircleAvatar(
-            radius: 58,
-            backgroundColor: Colors.grey.shade300,
-            backgroundImage: hasPhoto
-                ? NetworkImage(widget.user.photoUrl.trim())
-                : null,
-            child: hasPhoto
-                ? null
-                : const Icon(
-              Icons.person,
-              size: 70,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        Container(
-          height: 38,
-          width: 38,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white,
-              width: 2,
-            ),
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Profile photo upload will be added later.',
-                  ),
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: CircleAvatar(
+                radius: 58,
+                backgroundColor: Colors.grey.shade300,
+                backgroundImage: hasPhoto
+                    ? NetworkImage(_photoUrl.trim())
+                    : null,
+                child: hasPhoto
+                    ? null
+                    : const Icon(
+                  Icons.person,
+                  size: 70,
+                  color: Colors.white,
                 ),
-              );
-            },
-            icon: const Icon(
-              Icons.camera_alt_outlined,
-              size: 20,
-              color: Colors.white,
+              ),
             ),
+            Container(
+              height: 42,
+              width: 42,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white,
+                  width: 3,
+                ),
+              ),
+              child: _isUploadingPhoto
+                  ? const Padding(
+                padding: EdgeInsets.all(10),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.white,
+                ),
+              )
+                  : IconButton(
+                padding: EdgeInsets.zero,
+                tooltip: 'Upload profile photo',
+                onPressed: _uploadProfilePhoto,
+                icon: const Icon(
+                  Icons.camera_alt_outlined,
+                  size: 21,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          _isUploadingPhoto
+              ? 'Uploading photo...'
+              : 'Tap the camera icon to change photo',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
           ),
         ),
       ],
@@ -344,6 +465,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             color: Colors.grey.shade300,
           ),
         ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Colors.grey.shade400,
+          ),
+        ),
       ),
     );
   }
@@ -356,7 +483,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
     TextInputAction textInputAction = TextInputAction.next,
-    TextCapitalization textCapitalization = TextCapitalization.none,
+    TextCapitalization textCapitalization =
+        TextCapitalization.none,
     int maxLines = 1,
     int? maxLength,
   }) {
@@ -368,7 +496,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       textCapitalization: textCapitalization,
       maxLines: maxLines,
       maxLength: maxLength,
-      enabled: !_isSaving,
+      enabled: !_isSaving && !_isUploadingPhoto,
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
@@ -401,16 +529,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             color: Colors.red,
           ),
         ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildSaveButton() {
+    final bool isBusy =
+        _isSaving || _isUploadingPhoto;
+
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: ElevatedButton.icon(
-        onPressed: _isSaving ? null : _saveProfile,
+        onPressed: isBusy ? null : _saveProfile,
         icon: _isSaving
             ? const SizedBox(
           height: 22,
@@ -422,7 +560,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         )
             : const Icon(Icons.save_outlined),
         label: Text(
-          _isSaving ? 'Saving...' : 'Save Changes',
+          _isSaving
+              ? 'Saving...'
+              : _isUploadingPhoto
+              ? 'Uploading Photo...'
+              : 'Save Changes',
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -431,7 +573,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: primaryColor.withValues(alpha: 0.6),
+          disabledBackgroundColor:
+          primaryColor.withValues(alpha: 0.60),
           disabledForegroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
