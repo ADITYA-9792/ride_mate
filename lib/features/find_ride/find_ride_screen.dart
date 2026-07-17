@@ -518,7 +518,7 @@ class _FindRideScreenState extends State<FindRideScreen> {
                     const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     itemCount: rides.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                     const SizedBox(height: 14),
                     itemBuilder: (context, index) {
                       final document = rides[index];

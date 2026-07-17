@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../features/home/home_screen.dart';
+import '../../features/home/screens/home_screen.dart';
 import '../login/login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
