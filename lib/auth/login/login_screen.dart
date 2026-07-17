@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../fogot_password/forgot_password_screen.dart';
 import '../signup/signup_screen.dart';
-import '../../features/home/home_screen.dart';
+import '../../features/home/screens/home_screen.dart';
 import '../../services/google_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
